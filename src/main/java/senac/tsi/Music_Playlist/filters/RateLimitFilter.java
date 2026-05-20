@@ -2,7 +2,6 @@ package senac.tsi.Music_Playlist.filters;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Refill;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -18,19 +17,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RateLimitFilter extends GenericFilterBean {
-    // API KEY -> BUCKET
-    private final Map<String, Bucket> buckets =
-            new ConcurrentHashMap<>();
+
+    private static final int CAPACITY = 10;
+    private static final Duration REFILL_PERIOD = Duration.ofMinutes(1);
+
+    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private Bucket createBucket() {
-
-        Bandwidth limit = Bandwidth.classic(
-                10, // capacity
-                Refill.intervally(
-                        10,
-                        Duration.ofMinutes(1)
-                )
-        );
+        Bandwidth limit = Bandwidth.builder()
+                .capacity(CAPACITY)
+                .refillIntervally(CAPACITY, REFILL_PERIOD)
+                .build();
 
         return Bucket.builder()
                 .addLimit(limit)
@@ -44,59 +41,45 @@ public class RateLimitFilter extends GenericFilterBean {
             FilterChain chain
     ) throws IOException, ServletException {
 
-        HttpServletRequest httpRequest =
-                (HttpServletRequest) request;
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        HttpServletResponse httpResponse =
-                (HttpServletResponse) response;
-
-        String apiKey =
-                httpRequest.getHeader("X-API-KEY");
-
-        // OPTIONAL:
-        // skip public endpoints
         String path = httpRequest.getRequestURI();
 
-        if (
-                path.startsWith("/auth")
-                        || path.startsWith("/swagger-ui")
-                        || path.startsWith("/v3/api-docs")
-                        || path.startsWith("/h2-console")
-        ) {
-
+        if (isPublicPath(path)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // if no key yet, use IP fallback
-        if (apiKey == null || apiKey.isBlank()) {
-            apiKey = httpRequest.getRemoteAddr();
-        }
+        String apiKey = httpRequest.getHeader("X-API-KEY");
 
-        Bucket bucket = buckets.computeIfAbsent(
-                apiKey,
-                k -> createBucket()
-        );
+        // Fall back to IP if no API key present yet (e.g. unauthenticated probing)
+        String bucketKey = (apiKey != null && !apiKey.isBlank())
+                ? apiKey
+                : httpRequest.getRemoteAddr();
+
+        Bucket bucket = buckets.computeIfAbsent(bucketKey, k -> createBucket());
 
         if (bucket.tryConsume(1)) {
-
             chain.doFilter(request, response);
-
         } else {
-
             httpResponse.setStatus(429);
-
-            httpResponse.setContentType(
-                    MediaType.APPLICATION_JSON_VALUE
-            );
-
+            httpResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
             httpResponse.getWriter().write("""
                     {
                       "status": 429,
                       "error": "Too Many Requests",
-                      "message": "Rate limit exceeded"
+                      "message": "Rate limit exceeded. Try again in 1 minute."
                     }
                     """);
         }
+    }
+
+    private boolean isPublicPath(String path) {
+        return path.startsWith("/auth")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/api-docs")
+                || path.startsWith("/h2-console");
     }
 }

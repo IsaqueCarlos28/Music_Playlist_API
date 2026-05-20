@@ -18,16 +18,13 @@ public class ApiKeyController {
         this.service = service;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')") // fixed: hasRole() would look for 'ROLE_ADMIN'
     @PostMapping("/generate/{usuarioId}")
     public ResponseEntity<Map<String, String>> generate(
             @PathVariable Long usuarioId,
             @RequestParam String role
     ) {
-
         String key = service.generateKey(usuarioId, role);
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("apiKey", key));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("apiKey", key));
     }
 }
