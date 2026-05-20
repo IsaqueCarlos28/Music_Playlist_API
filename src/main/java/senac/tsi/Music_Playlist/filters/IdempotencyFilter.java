@@ -15,6 +15,8 @@ import java.io.IOException;
 @Component
 public class IdempotencyFilter extends OncePerRequestFilter {
 
+    private static final String IDEMPOTENCY_HEADER = "X-Idempotency-Key";
+
     private final IdempotencyService service;
 
     public IdempotencyFilter(IdempotencyService service) {
@@ -33,7 +35,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
             return;
         }
 
-        String key = request.getHeader("Idempotency-Key");
+        String key = request.getHeader(IDEMPOTENCY_HEADER);
 
         if (key == null || key.isBlank()) {
             filterChain.doFilter(request, response);
@@ -43,25 +45,23 @@ public class IdempotencyFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        IdempotencyKey existing =
-                service.get(key, method, path);
+        IdempotencyKey existing = service.get(key, method, path);
 
         // 1. RETURN CACHED RESPONSE
         if (existing != null) {
-
             response.setStatus(existing.getStatusCode());
             response.setContentType("application/json");
             response.getWriter().write(existing.getResponseBody());
             return;
         }
 
-        // 2. WRAP RESPONSE PROPERLY
+        // 2. WRAP RESPONSE TO CAPTURE BODY
         ContentCachingResponseWrapper wrappedResponse =
                 new ContentCachingResponseWrapper(response);
 
         filterChain.doFilter(request, wrappedResponse);
 
-        // 3. READ RESPONSE BODY SAFELY
+        // 3. READ RESPONSE BODY
         String body = new String(
                 wrappedResponse.getContentAsByteArray(),
                 wrappedResponse.getCharacterEncoding()
@@ -76,7 +76,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
                 wrappedResponse.getStatus()
         );
 
-        // 5. IMPORTANT: COPY BACK RESPONSE
+        // 5. COPY BACK SO CLIENT RECEIVES THE RESPONSE
         wrappedResponse.copyBodyToResponse();
     }
 }

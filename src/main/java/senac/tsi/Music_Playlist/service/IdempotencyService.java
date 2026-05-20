@@ -1,6 +1,5 @@
 package senac.tsi.Music_Playlist.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import senac.tsi.Music_Playlist.domains.IdempotencyKey;
 import senac.tsi.Music_Playlist.repository.IdempotencyKeyRepository;
@@ -11,14 +10,9 @@ import java.time.LocalDateTime;
 public class IdempotencyService {
 
     private final IdempotencyKeyRepository repository;
-    private final ObjectMapper objectMapper;
 
-    public IdempotencyService(
-            IdempotencyKeyRepository repository,
-            ObjectMapper objectMapper
-    ) {
+    public IdempotencyService(IdempotencyKeyRepository repository) {
         this.repository = repository;
-        this.objectMapper = objectMapper;
     }
 
     public IdempotencyKey get(String key, String method, String path) {
@@ -30,23 +24,19 @@ public class IdempotencyService {
             String key,
             String method,
             String path,
-            Object response,
+            String responseBody,
             int statusCode
     ) {
-        try {
-            IdempotencyKey entity = IdempotencyKey.builder()
-                    .idempotencyKey(key)
-                    .method(method)
-                    .path(path)
-                    .responseBody(objectMapper.writeValueAsString(response))
-                    .statusCode(statusCode)
-                    .createdAt(LocalDateTime.now())
-                    .expiresAt(LocalDateTime.now().plusMinutes(1))
-                    .build();
+        IdempotencyKey entity = IdempotencyKey.builder()
+                .idempotencyKey(key)
+                .method(method)
+                .path(path)
+                .responseBody(responseBody)
+                .statusCode(statusCode)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .build();
 
-            return repository.save(entity);
-        } catch (Exception e) {
-            throw new RuntimeException("Error saving idempotency key");
-        }
+        return repository.save(entity);
     }
 }

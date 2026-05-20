@@ -5,7 +5,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.stereotype.Service;
-import senac.tsi.Music_Playlist.domains.ApiKey;
+import senac.tsi.Music_Playlist.domains.ApiKeys;
 import senac.tsi.Music_Playlist.infrastructure.ApiKeyAuthentication;
 import senac.tsi.Music_Playlist.repository.ApiKeyRepository;
 
@@ -30,19 +30,19 @@ public class AuthenticationService {
             throw new BadCredentialsException("Missing API Key");
         }
 
-        ApiKey apiKey = repository.findByKeyAndActiveTrue(key)
+        ApiKeys apiKeys = repository.findByKeyAndActiveTrue(key)
                 .orElseThrow(() ->
                         new BadCredentialsException("Invalid API Key"));
 
-        if (apiKey.getExpiresAt() != null &&
-                apiKey.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (apiKeys.getExpiresAt() != null &&
+                apiKeys.getExpiresAt().isBefore(LocalDateTime.now())) {
 
             throw new BadCredentialsException("API Key expired");
         }
 
         return new ApiKeyAuthentication(
                 key,
-                AuthorityUtils.createAuthorityList(apiKey.getRole().toString())
+                AuthorityUtils.createAuthorityList(apiKeys.getRole().toString())
         );
     }
 }

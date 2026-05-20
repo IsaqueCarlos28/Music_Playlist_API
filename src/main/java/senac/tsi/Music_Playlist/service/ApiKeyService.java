@@ -1,8 +1,9 @@
 package senac.tsi.Music_Playlist.service;
 
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import senac.tsi.Music_Playlist.domains.ApiKey;
+import senac.tsi.Music_Playlist.domains.ApiKeys;
 import senac.tsi.Music_Playlist.domains.Usuario;
 import senac.tsi.Music_Playlist.dtos.login.LoginResponseDTO;
 import senac.tsi.Music_Playlist.exceptions.NotFoundException;
@@ -17,14 +18,18 @@ import java.util.UUID;
 @Service
 public class ApiKeyService {
 
-
     private final ApiKeyRepository apiKeyRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public ApiKeyService(ApiKeyRepository apiKeyRepository,
-                         UsuarioRepository usuarioRepository) {
+    public ApiKeyService(
+            ApiKeyRepository apiKeyRepository,
+            UsuarioRepository usuarioRepository,
+            PasswordEncoder passwordEncoder
+    ) {
         this.apiKeyRepository = apiKeyRepository;
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public LoginResponseDTO loginAndGenerateKey(String email, String password) {
@@ -32,35 +37,34 @@ public class ApiKeyService {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
-        // ⚠️ replace with BCrypt later if you already use it
-        if (!usuario.getSenhaHash().equals(password)) {
+        if (!passwordEncoder.matches(password, usuario.getSenhaHash())) {
             throw new BadCredentialsException("Invalid credentials");
         }
 
-        // OPTIONAL: reuse active key instead of creating new every login
-        Optional<ApiKey> existingKey = apiKeyRepository
+        // Reuse active key instead of creating a new one every login
+        Optional<ApiKeys> existingKey = apiKeyRepository
                 .findByUsuarioAndActiveTrue(usuario);
 
-        ApiKey apiKey;
+        ApiKeys apiKeys;
 
         if (existingKey.isPresent()) {
-            apiKey = existingKey.get();
+            apiKeys = existingKey.get();
         } else {
-            apiKey = ApiKey.builder()
+            apiKeys = ApiKeys.builder()
                     .key(UUID.randomUUID().toString().replace("-", ""))
                     .usuario(usuario)
-                    .role(usuario.getRole()) // ROLE_USER / ROLE_ADMIN
+                    .role(usuario.getRole())
                     .createdAt(LocalDateTime.now())
                     .expiresAt(LocalDateTime.now().plusDays(30))
                     .active(true)
                     .build();
 
-            apiKeyRepository.save(apiKey);
+            apiKeyRepository.save(apiKeys);
         }
 
         return new LoginResponseDTO(
-                apiKey.getKey(),
-                apiKey.getRole(),
+                apiKeys.getKey(),
+                apiKeys.getRole(),
                 usuario.getId()
         );
     }
@@ -71,9 +75,8 @@ public class ApiKeyService {
                 .orElseThrow(() ->
                         new NotFoundException("Usuario", "id", usuarioId));
 
-        // OPTIONAL:
-        // deactivate previous active keys
-        List<ApiKey> activeKeys =
+        // Deactivate previous active keys
+        List<ApiKeys> activeKeys =
                 apiKeyRepository.findAllByUsuarioAndActiveTrue(usuario);
 
         activeKeys.forEach(key -> key.setActive(false));
@@ -83,16 +86,16 @@ public class ApiKeyService {
         String generatedKey =
                 UUID.randomUUID().toString().replace("-", "");
 
-        ApiKey apiKey = ApiKey.builder()
+        ApiKeys apiKeys = ApiKeys.builder()
                 .key(generatedKey)
                 .usuario(usuario)
-                .role(role)
+                .role(usuario.getRole())
                 .createdAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusDays(30))
                 .active(true)
                 .build();
 
-        apiKeyRepository.save(apiKey);
+        apiKeyRepository.save(apiKeys);
 
         return generatedKey;
     }

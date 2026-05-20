@@ -19,17 +19,17 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("error", "Internal Server Error");
-        body.put("message", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
-    }
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+//
+//        Map<String, Object> body = new HashMap<>();
+//        body.put("timestamp", LocalDateTime.now());
+//        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+//        body.put("error", "Internal Server Error");
+//        body.put("message", ex.getMessage());
+//
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+//    }
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<Map<String, Object>>

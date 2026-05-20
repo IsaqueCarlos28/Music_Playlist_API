@@ -1,17 +1,17 @@
 package senac.tsi.Music_Playlist.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import senac.tsi.Music_Playlist.domains.ApiKey;
+import senac.tsi.Music_Playlist.domains.ApiKeys;
 import senac.tsi.Music_Playlist.domains.Usuario;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface ApiKeyRepository extends JpaRepository<ApiKey, Long> {
+public interface ApiKeyRepository extends JpaRepository<ApiKeys, Long> {
 
-    Optional<ApiKey> findByKeyAndActiveTrue(String key);
+    Optional<ApiKeys> findByKeyAndActiveTrue(String key);
 
-    Optional<ApiKey> findByUsuarioAndActiveTrue(Usuario usuario);
+    Optional<ApiKeys> findByUsuarioAndActiveTrue(Usuario usuario);
 
-    List<ApiKey> findAllByUsuarioAndActiveTrue(Usuario usuario);
+    List<ApiKeys> findAllByUsuarioAndActiveTrue(Usuario usuario);
 }

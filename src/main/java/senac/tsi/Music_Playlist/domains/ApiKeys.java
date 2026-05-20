@@ -1,34 +1,34 @@
 package senac.tsi.Music_Playlist.domains;
 
-
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
 import senac.tsi.Music_Playlist.domains.Enum.Role;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table
+@Table(name = "api_keys")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ApiKey {
+
+public class ApiKeys {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 64)
+    @Column(name = "api_key_value", unique = true, nullable = false, length = 64)
     private String key;
 
     @ManyToOne(optional = false)
     private Usuario usuario;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role; // ROLE_USER / ROLE_ADMIN
+    private Role role;
 
     private LocalDateTime createdAt;
 

@@ -60,42 +60,22 @@ public class PlaylistService {
 
         Playlist playlist = repository.findById(id)
                 .orElseThrow(() ->
-                        new NotFoundException(
-                                "Playlist",
-                                "id",
-                                id
-                        )
-                );
+                        new NotFoundException("Playlist", "id", id));
 
         PlaylistResponseDTO responseDTO = mapper.toResponseDTO(playlist);
         return assembler.toModel(responseDTO);
     }
 
-    public EntityModel<PlaylistResponseDTO> create(
-            PlaylistInputDTO dto
-    ) {
+    public EntityModel<PlaylistResponseDTO> create(PlaylistInputDTO dto) {
 
         Usuario usuario = usuarioRepository
                 .findById(dto.usuarioId())
                 .orElseThrow(() ->
-                        new NotFoundException(
-                                "Usuario",
-                                "id",
-                                dto.usuarioId()
-                        )
-                );
+                        new NotFoundException("Usuario", "id", dto.usuarioId()));
 
-        List<Musica> musicas =
-                musicaRepository.findAllById(
-                        dto.musicasIds()
-                );
+        List<Musica> musicas = resolveMusicas(dto.musicasIds());
 
-        Playlist playlist =
-                mapper.toEntity(
-                        dto,
-                        usuario,
-                        musicas
-                );
+        Playlist playlist = mapper.toEntity(dto, usuario, musicas);
 
         Playlist saved = repository.save(playlist);
 
@@ -103,34 +83,18 @@ public class PlaylistService {
         return assembler.toModel(responseDTO);
     }
 
-    public EntityModel<PlaylistResponseDTO> update(
-            Long id,
-            PlaylistInputDTO dto
-    ) {
+    public EntityModel<PlaylistResponseDTO> update(Long id, PlaylistInputDTO dto) {
 
         Playlist playlist = repository.findById(id)
                 .orElseThrow(() ->
-                        new NotFoundException(
-                                "Playlist",
-                                "id",
-                                id
-                        )
-                );
+                        new NotFoundException("Playlist", "id", id));
 
         Usuario usuario = usuarioRepository
                 .findById(dto.usuarioId())
                 .orElseThrow(() ->
-                        new NotFoundException(
-                                "Usuario",
-                                "id",
-                                dto.usuarioId()
-                        )
-                );
+                        new NotFoundException("Usuario", "id", dto.usuarioId()));
 
-        List<Musica> musicas =
-                musicaRepository.findAllById(
-                        dto.musicasIds()
-                );
+        List<Musica> musicas = resolveMusicas(dto.musicasIds());
 
         playlist.setNome(dto.nome());
         playlist.setUsuario(usuario);
@@ -146,57 +110,33 @@ public class PlaylistService {
 
         Playlist playlist = repository.findById(id)
                 .orElseThrow(() ->
-                        new NotFoundException(
-                                "Playlist",
-                                "id",
-                                id
-                        )
-                );
+                        new NotFoundException("Playlist", "id", id));
 
         repository.delete(playlist);
     }
 
     // CUSTOM QUERY
     public PagedModel<EntityModel<PlaylistResponseDTO>>
-    findByNome(
-            String nome,
-            Pageable pageable
-    ) {
+    findByNome(String nome, Pageable pageable) {
 
         Page<PlaylistResponseDTO> page =
                 repository
-                        .findByNomeContainingIgnoreCase(
-                                nome,
-                                pageable
-                        )
+                        .findByNomeContainingIgnoreCase(nome, pageable)
                         .map(mapper::toResponseDTO);
 
         return pagedAssembler.toModel(page, assembler);
     }
 
     // ADD MUSIC
-    public EntityModel<PlaylistResponseDTO> addMusica(
-            Long playlistId,
-            Long musicaId
-    ) {
+    public EntityModel<PlaylistResponseDTO> addMusica(Long playlistId, Long musicaId) {
 
         Playlist playlist = repository.findById(playlistId)
                 .orElseThrow(() ->
-                        new NotFoundException(
-                                "Playlist",
-                                "id",
-                                playlistId
-                        )
-                );
+                        new NotFoundException("Playlist", "id", playlistId));
 
         Musica musica = musicaRepository.findById(musicaId)
                 .orElseThrow(() ->
-                        new NotFoundException(
-                                "Musica",
-                                "id",
-                                musicaId
-                        )
-                );
+                        new NotFoundException("Musica", "id", musicaId));
 
         if (!playlist.getMusicas().contains(musica)) {
             playlist.getMusicas().add(musica);
@@ -209,31 +149,35 @@ public class PlaylistService {
     }
 
     // REMOVE MUSIC
-    public void removeMusica(
-            Long playlistId,
-            Long musicaId
-    ) {
+    public void removeMusica(Long playlistId, Long musicaId) {
 
         Playlist playlist = repository.findById(playlistId)
                 .orElseThrow(() ->
-                        new NotFoundException(
-                                "Playlist",
-                                "id",
-                                playlistId
-                        )
-                );
+                        new NotFoundException("Playlist", "id", playlistId));
 
         Musica musica = musicaRepository.findById(musicaId)
                 .orElseThrow(() ->
-                        new NotFoundException(
-                                "Musica",
-                                "id",
-                                musicaId
-                        )
-                );
+                        new NotFoundException("Musica", "id", musicaId));
 
         playlist.getMusicas().remove(musica);
 
         repository.save(playlist);
+    }
+
+    /**
+     * Validates that every requested music ID exists, throwing
+     * NotFoundException for the first missing one.
+     */
+    private List<Musica> resolveMusicas(List<Long> ids) {
+        List<Musica> musicas = musicaRepository.findAllById(ids);
+        if (musicas.size() != ids.size()) {
+            List<Long> foundIds = musicas.stream().map(Musica::getId).toList();
+            Long missingId = ids.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .findFirst()
+                    .orElseThrow();
+            throw new NotFoundException("Musica", "id", missingId);
+        }
+        return musicas;
     }
 }
