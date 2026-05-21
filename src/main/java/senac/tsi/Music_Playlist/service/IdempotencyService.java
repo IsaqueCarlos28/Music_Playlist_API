@@ -34,7 +34,7 @@ public class IdempotencyService {
                 .responseBody(responseBody)
                 .statusCode(statusCode)
                 .createdAt(LocalDateTime.now())
-                .expiresAt(LocalDateTime.now().plusHours(24))
+                .expiresAt(LocalDateTime.now().plusMinutes(1))
                 .build();
 
         return repository.save(entity);

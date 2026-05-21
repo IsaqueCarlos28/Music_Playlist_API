@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import senac.tsi.Music_Playlist.domains.Enum.Role;
 import senac.tsi.Music_Playlist.dtos.usuario.UsuarioInputDTO;
 import senac.tsi.Music_Playlist.dtos.usuario.UsuarioResponseDTO;
 import senac.tsi.Music_Playlist.service.UsuarioService;
@@ -25,7 +26,7 @@ public class UsuarioController {
         this.service = service;
     }
 
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+//    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping
     public ResponseEntity<PagedModel<EntityModel<UsuarioResponseDTO>>>
     getAll(@ParameterObject Pageable pageable) {
@@ -42,7 +43,6 @@ public class UsuarioController {
         return ResponseEntity.ok(service.getById(id));
     }
 
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @PostMapping
     public ResponseEntity<EntityModel<UsuarioResponseDTO>> create(
             @RequestBody @Valid UsuarioInputDTO dto

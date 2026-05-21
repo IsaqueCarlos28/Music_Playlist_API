@@ -65,6 +65,7 @@ public class RateLimitFilter extends GenericFilterBean {
         } else {
             httpResponse.setStatus(429);
             httpResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            httpResponse.setHeader("Retry-After", "60");
             httpResponse.getWriter().write("""
                     {
                       "status": 429,

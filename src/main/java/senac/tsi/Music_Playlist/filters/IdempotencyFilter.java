@@ -4,8 +4,12 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.apache.coyote.BadRequestException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import senac.tsi.Music_Playlist.domains.IdempotencyKey;
 import senac.tsi.Music_Playlist.service.IdempotencyService;
@@ -38,7 +42,18 @@ public class IdempotencyFilter extends OncePerRequestFilter {
         String key = request.getHeader(IDEMPOTENCY_HEADER);
 
         if (key == null || key.isBlank()) {
-            filterChain.doFilter(request, response);
+
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+
+            response.getWriter().write("""
+            {
+                "status": 400,
+                "error": "Bad Request",
+                "message": "Missing X-Idempotency-Key header"
+            }
+            """);
+
             return;
         }
 

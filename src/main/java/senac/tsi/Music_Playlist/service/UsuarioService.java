@@ -13,6 +13,7 @@ import senac.tsi.Music_Playlist.domains.Usuario;
 import senac.tsi.Music_Playlist.dtos.usuario.UsuarioInputDTO;
 import senac.tsi.Music_Playlist.dtos.usuario.UsuarioResponseDTO;
 import senac.tsi.Music_Playlist.exceptions.BusinessException;
+import senac.tsi.Music_Playlist.exceptions.ConflictException;
 import senac.tsi.Music_Playlist.exceptions.NotFoundException;
 import senac.tsi.Music_Playlist.mapper.UsuarioMapper;
 import senac.tsi.Music_Playlist.repository.PerfilRepository;
@@ -22,7 +23,6 @@ import senac.tsi.Music_Playlist.repository.UsuarioRepository;
 public class UsuarioService {
 
     private final UsuarioRepository repository;
-    private final PerfilRepository perfilRepository;
     private final UsuarioMapper mapper;
     private final PagedResourcesAssembler<UsuarioResponseDTO> pagedAssembler;
     private final UsuarioAssembler assembler;
@@ -30,14 +30,12 @@ public class UsuarioService {
 
     public UsuarioService(
             UsuarioRepository repository,
-            PerfilRepository perfilRepository,
             UsuarioMapper mapper,
             PagedResourcesAssembler<UsuarioResponseDTO> pagedAssembler,
             UsuarioAssembler assembler,
             PasswordEncoder passwordEncoder
     ) {
         this.repository = repository;
-        this.perfilRepository = perfilRepository;
         this.mapper = mapper;
         this.pagedAssembler = pagedAssembler;
         this.assembler = assembler;
@@ -65,7 +63,7 @@ public class UsuarioService {
     public EntityModel<UsuarioResponseDTO> create(UsuarioInputDTO dto) {
 
         if (repository.existsByEmail(dto.email())) {
-            throw new BusinessException(
+            throw new ConflictException(
                     "Email already in use",
                     "Usuario",
                     "email",
@@ -73,12 +71,8 @@ public class UsuarioService {
             );
         }
 
-        Perfil perfil = perfilRepository.findById(dto.perfilId())
-                .orElseThrow(() ->
-                        new NotFoundException("Perfil", "id", dto.perfilId()));
-
         String senhaHash = passwordEncoder.encode(dto.senha());
-        Usuario usuario = mapper.toEntity(dto, Role.USER, senhaHash, perfil);
+        Usuario usuario = mapper.toEntity(dto, Role.USER, senhaHash);
 
         repository.save(usuario);
 
@@ -102,14 +96,8 @@ public class UsuarioService {
             );
         }
 
-        Perfil perfil = perfilRepository.findById(dto.perfilId())
-                .orElseThrow(() ->
-                        new NotFoundException("Perfil", "id", dto.perfilId()));
-
         usuario.setNome(dto.nome());
         usuario.setEmail(dto.email());
-        usuario.setPerfil(perfil);
-
         repository.save(usuario);
 
         UsuarioResponseDTO responseDTO = mapper.toResponseDTO(usuario);

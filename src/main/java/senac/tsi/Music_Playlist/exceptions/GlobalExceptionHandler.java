@@ -137,6 +137,24 @@ public class GlobalExceptionHandler {
                 .body(body);
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleConflitException(ConflictException ex) {
+
+        var body = Map.of(
+                "timestamp", LocalDateTime.now(),
+                "status", HttpStatus.CONFLICT.value(),
+                "error", "Conflict rule violation",
+                "message", ex.getMessage(),
+                "resource", ex.getResource(),
+                "field", ex.getField(),
+                "value", ex.getValue()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(body);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
 
