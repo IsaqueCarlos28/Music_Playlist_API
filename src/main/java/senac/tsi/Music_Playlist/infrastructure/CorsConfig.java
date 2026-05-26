@@ -10,7 +10,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
-@Configuration
 public class CorsConfig {
 
     @Value("${cors.allowed-origins}")
@@ -20,9 +19,16 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
+
+        // Keep your methods
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+
+        // FIX 1: Explicitly include your custom header so the preflight check accepts it
+        config.setAllowedHeaders(List.of("X-API-KEY", "Content-Type", "Authorization"));
+
+        // Optional: Keep this if your backend sends X-API-KEY back to the client
         config.setExposedHeaders(List.of("X-API-KEY"));
+
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
