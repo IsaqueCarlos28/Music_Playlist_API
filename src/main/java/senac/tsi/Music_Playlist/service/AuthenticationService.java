@@ -26,8 +26,9 @@ public class AuthenticationService {
 
         String key = request.getHeader(HEADER);
 
+        // No API key -> anonymous request
         if (key == null || key.isBlank()) {
-            throw new BadCredentialsException("Missing API Key");
+            return null;
         }
 
         ApiKeys apiKeys = repository.findByKeyAndActiveTrue(key)
@@ -42,7 +43,9 @@ public class AuthenticationService {
 
         return new ApiKeyAuthentication(
                 key,
-                AuthorityUtils.createAuthorityList(apiKeys.getRole().toString())
+                AuthorityUtils.createAuthorityList(
+                        "ROLE_" + apiKeys.getRole().toString()
+                )
         );
     }
 }

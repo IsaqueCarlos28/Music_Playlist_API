@@ -24,12 +24,10 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "O nome é obrigatório")
-    @Size(min = 3, max = 100, message = "O nome deve ter entre 3 e 100 caracteres")
+
     @Column(nullable = false, length = 100)
     private String nome;
 
-    @NotBlank(message = "O email é obrigatório")
     @Email(message = "Email inválido")
     @Column(unique = true, nullable = false)
     private String email;
@@ -44,11 +42,28 @@ public class Usuario {
     private Role role;
 
     // One-to-One
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToOne(
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
     @JoinColumn(name = "perfil_id")
     private Perfil perfil;
 
     // One-to-Many
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY,orphanRemoval = true)
     private List<Playlist> playlists = new ArrayList<>();
+
+    public void setPerfil(Perfil perfil){
+        this.perfil = perfil;
+
+        if (perfil != null) {
+            perfil.setUsuario(this);
+        }
+    }
+
+    public void addPlaylist(Playlist playlist) {
+        playlists.add(playlist);
+        playlist.setUsuario(this);
+    }
 }

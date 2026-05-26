@@ -1,5 +1,6 @@
 package senac.tsi.Music_Playlist.service;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
@@ -19,6 +20,8 @@ import senac.tsi.Music_Playlist.repository.PlaylistRepository;
 import senac.tsi.Music_Playlist.repository.UsuarioRepository;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class PlaylistService {
@@ -66,6 +69,7 @@ public class PlaylistService {
         return assembler.toModel(responseDTO);
     }
 
+    @Transactional
     public EntityModel<PlaylistResponseDTO> create(PlaylistInputDTO dto) {
 
         Usuario usuario = usuarioRepository
@@ -73,9 +77,11 @@ public class PlaylistService {
                 .orElseThrow(() ->
                         new NotFoundException("Usuario", "id", dto.usuarioId()));
 
-        List<Musica> musicas = resolveMusicas(dto.musicasIds());
+        Set<Musica> musicas = resolveMusicas(dto.musicasIds()).stream().collect(Collectors.toSet());
 
         Playlist playlist = mapper.toEntity(dto, usuario, musicas);
+
+        usuario.addPlaylist(playlist);
 
         Playlist saved = repository.save(playlist);
 
@@ -83,6 +89,7 @@ public class PlaylistService {
         return assembler.toModel(responseDTO);
     }
 
+    @Transactional
     public EntityModel<PlaylistResponseDTO> update(Long id, PlaylistInputDTO dto) {
 
         Playlist playlist = repository.findById(id)
@@ -94,7 +101,7 @@ public class PlaylistService {
                 .orElseThrow(() ->
                         new NotFoundException("Usuario", "id", dto.usuarioId()));
 
-        List<Musica> musicas = resolveMusicas(dto.musicasIds());
+        Set<Musica> musicas = resolveMusicas(dto.musicasIds()).stream().collect(Collectors.toSet());
 
         playlist.setNome(dto.nome());
         playlist.setUsuario(usuario);
@@ -106,6 +113,7 @@ public class PlaylistService {
         return assembler.toModel(responseDTO);
     }
 
+    @Transactional
     public void delete(Long id) {
 
         Playlist playlist = repository.findById(id)
@@ -128,6 +136,7 @@ public class PlaylistService {
     }
 
     // ADD MUSIC
+    @Transactional
     public EntityModel<PlaylistResponseDTO> addMusica(Long playlistId, Long musicaId) {
 
         Playlist playlist = repository.findById(playlistId)
@@ -149,6 +158,7 @@ public class PlaylistService {
     }
 
     // REMOVE MUSIC
+    @Transactional
     public void removeMusica(Long playlistId, Long musicaId) {
 
         Playlist playlist = repository.findById(playlistId)
@@ -169,6 +179,10 @@ public class PlaylistService {
      * NotFoundException for the first missing one.
      */
     private List<Musica> resolveMusicas(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
         List<Musica> musicas = musicaRepository.findAllById(ids);
         if (musicas.size() != ids.size()) {
             List<Long> foundIds = musicas.stream().map(Musica::getId).toList();

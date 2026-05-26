@@ -11,6 +11,7 @@ import senac.tsi.Music_Playlist.assemblers.MusicaAssembler;
 import senac.tsi.Music_Playlist.domains.Artista;
 import senac.tsi.Music_Playlist.domains.Musica;
 import senac.tsi.Music_Playlist.dtos.musica.MusicaInputDTO;
+import senac.tsi.Music_Playlist.dtos.musica.MusicaInputDTOv2;
 import senac.tsi.Music_Playlist.dtos.musica.MusicaResponseDTO;
 import senac.tsi.Music_Playlist.exceptions.NotFoundException;
 import senac.tsi.Music_Playlist.mapper.MusicaMapper;
@@ -86,9 +87,31 @@ public class MusicaService {
         return assembler.toModel(responseDTO);
     }
 
+    public EntityModel<MusicaResponseDTO> createV2(
+            MusicaInputDTOv2 dto
+    ) {
+
+        Artista artista = artistaRepository
+                .findById(dto.artistaId())
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Artista",
+                                "id",
+                                dto.artistaId()
+                        )
+                );
+
+        Musica musica = mapper.toEntityV2(dto, artista);
+
+        Musica saved = repository.save(musica);
+
+        MusicaResponseDTO responseDTO = mapper.toResponseDTO(saved);
+        return assembler.toModel(responseDTO);
+    }
+
     public EntityModel<MusicaResponseDTO> update(
             Long id,
-            MusicaInputDTO dto
+            MusicaInputDTOv2 dto
     ) {
 
         Musica musica = repository.findById(id)
@@ -113,6 +136,7 @@ public class MusicaService {
         musica.setTitulo(dto.titulo());
         musica.setDuracaoSegundos(dto.duracaoSegundos());
         musica.setArtista(artista);
+        musica.setLink(dto.link());
 
         repository.save(musica);
 

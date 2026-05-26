@@ -21,7 +21,52 @@ import org.springframework.context.annotation.Configuration;
                 title = "Playlists Musica",
                 version = "0.0.1",
                 description = """
-                Crie e utilize playlists com suas musicas preferidas
+                API REST para criação e gerenciamento de playlists musicais.
+                
+                **Autenticação:** todos os endpoints (exceto POST /usuarios e POST /auth/login) exigem o cabeçalho `X-API-KEY`.
+                Obtenha sua chave via `POST /auth/login`.
+                
+                **Idempotência:** requisições POST devem incluir o cabeçalho `X-Idempotency-Key` (UUID único por operação)
+                para evitar processamento duplicado em caso de reenvio.
+                
+                **Rate Limiting:** máximo de 10 requisições por minuto por chave/IP.
+                Os cabeçalhos `X-RateLimit-Limit` e `X-RateLimit-Remaining` são retornados em cada resposta.
+                
+                **Versionamento:** o endpoint `POST /musicas` aceita o cabeçalho `X-API-Version: 1` (sem link) ou `X-API-Version: 2` (com link obrigatório).
+                
+                ---
+                
+                ## HTTP Status Codes
+            
+                | Código | Significado |
+                |--------|-------------|
+                | 200 OK | Requisição realizada com sucesso |
+                | 201 Created | Recurso criado com sucesso |
+                | 204 No Content | Operação realizada sem conteúdo de retorno |
+                | 400 Bad Request | Dados inválidos enviados pelo cliente |
+                | 401 Unauthorized | API Key ausente ou inválida |
+                | 403 Forbidden | Usuário sem permissão para acessar o recurso |
+                | 404 Not Found | Recurso não encontrado |
+                | 405 Method Not Allowed | O método de requisição 'POST' não é suportado. |
+                | 409 Conflict | Conflito de dados ou operação duplicada |
+                | 415 Unsupported Media Type | O formato de documento de patch não é suportado |
+                | 422 Unprocessable Entity | Erro de validação |
+                | 429 Too Many Requests | Limite de requisições excedido |
+                | 500 Internal Server Error | Erro interno do servidor |
+            
+                ---
+            
+                ## Estrutura de erro padrão
+            
+                ```json
+                {
+                  "timestamp": "2026-05-26T14:00:00",
+                  "status": 400,
+                  "error": "Bad Request",
+                  "message": "Validation failed",
+                  "path": "/usuarios"
+                }
+                ```
                 """,
                 contact = @Contact(
                         name = "Isaque Carlos",

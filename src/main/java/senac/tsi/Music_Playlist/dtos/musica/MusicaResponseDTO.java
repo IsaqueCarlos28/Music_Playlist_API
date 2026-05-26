@@ -4,6 +4,7 @@ public record MusicaResponseDTO(
         Long id,
         String titulo,
         Integer duracaoSegundos,
-        String artista
+        String artista,
+        String link
 ) {
 }

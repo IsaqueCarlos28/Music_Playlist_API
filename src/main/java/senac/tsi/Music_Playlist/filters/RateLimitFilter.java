@@ -2,6 +2,8 @@ package senac.tsi.Music_Playlist.filters;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import io.github.bucket4j.ConsumptionProbe;
+import io.github.bucket4j.Refill;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -24,10 +26,10 @@ public class RateLimitFilter extends GenericFilterBean {
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private Bucket createBucket() {
-        Bandwidth limit = Bandwidth.builder()
-                .capacity(CAPACITY)
-                .refillIntervally(CAPACITY, REFILL_PERIOD)
-                .build();
+        Bandwidth limit = Bandwidth.classic(
+                CAPACITY,
+                Refill.greedy(CAPACITY, REFILL_PERIOD)
+        );
 
         return Bucket.builder()
                 .addLimit(limit)
@@ -53,24 +55,30 @@ public class RateLimitFilter extends GenericFilterBean {
 
         String apiKey = httpRequest.getHeader("X-API-KEY");
 
-        // Fall back to IP if no API key present yet (e.g. unauthenticated probing)
         String bucketKey = (apiKey != null && !apiKey.isBlank())
                 ? apiKey
                 : httpRequest.getRemoteAddr();
 
         Bucket bucket = buckets.computeIfAbsent(bucketKey, k -> createBucket());
 
-        if (bucket.tryConsume(1)) {
+        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+
+        if (probe.isConsumed()) {
+            httpResponse.setHeader("X-RateLimit-Limit", String.valueOf(CAPACITY));
+            httpResponse.setHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
             chain.doFilter(request, response);
         } else {
+            long waitSeconds = probe.getNanosToWaitForRefill() / 1_000_000_000L;
             httpResponse.setStatus(429);
             httpResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            httpResponse.setHeader("Retry-After", "60");
+            httpResponse.setHeader("X-RateLimit-Limit", String.valueOf(CAPACITY));
+            httpResponse.setHeader("X-RateLimit-Remaining", "0");
+            httpResponse.setHeader("Retry-After", String.valueOf(waitSeconds > 0 ? waitSeconds : 60));
             httpResponse.getWriter().write("""
                     {
                       "status": 429,
                       "error": "Too Many Requests",
-                      "message": "Rate limit exceeded. Try again in 1 minute."
+                      "message": "Limite de requisições excedido. Tente novamente em 1 minuto."
                     }
                     """);
         }

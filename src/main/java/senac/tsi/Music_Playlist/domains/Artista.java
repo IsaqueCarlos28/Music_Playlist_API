@@ -6,7 +6,9 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "artistas")
@@ -32,6 +34,6 @@ public class Artista {
     private String genero;
 
     // One-to-Many
-    @OneToMany(mappedBy = "artista", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<Musica> musicas = new ArrayList<>();
+    @OneToMany(mappedBy = "artista", cascade = CascadeType.ALL, fetch = FetchType.LAZY,orphanRemoval = true)
+    private Set<Musica> musicas = new HashSet<>();
 }

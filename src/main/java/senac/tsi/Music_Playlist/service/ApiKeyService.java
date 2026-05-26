@@ -43,7 +43,7 @@ public class ApiKeyService {
 
         // Reuse active key instead of creating a new one every login
         Optional<ApiKeys> existingKey = apiKeyRepository
-                .findByUsuarioAndActiveTrue(usuario);
+                .findByUsuarioAndActiveTrueAndRole(usuario,usuario.getRole());
 
         ApiKeys apiKeys;
 
@@ -67,36 +67,5 @@ public class ApiKeyService {
                 apiKeys.getRole(),
                 usuario.getId()
         );
-    }
-
-    public String generateKey(Long usuarioId, String role) {
-
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() ->
-                        new NotFoundException("Usuario", "id", usuarioId));
-
-        // Deactivate previous active keys
-        List<ApiKeys> activeKeys =
-                apiKeyRepository.findAllByUsuarioAndActiveTrue(usuario);
-
-        activeKeys.forEach(key -> key.setActive(false));
-
-        apiKeyRepository.saveAll(activeKeys);
-
-        String generatedKey =
-                UUID.randomUUID().toString().replace("-", "");
-
-        ApiKeys apiKeys = ApiKeys.builder()
-                .key(generatedKey)
-                .usuario(usuario)
-                .role(usuario.getRole())
-                .createdAt(LocalDateTime.now())
-                .expiresAt(LocalDateTime.now().plusDays(30))
-                .active(true)
-                .build();
-
-        apiKeyRepository.save(apiKeys);
-
-        return generatedKey;
     }
 }

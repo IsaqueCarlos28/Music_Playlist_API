@@ -26,11 +26,16 @@ public class UsuarioMapper {
 
     public UsuarioResponseDTO toResponseDTO(Usuario entity) {
 
+        Object perfil = null;
+        if (entity.getPerfil() != null){
+            perfil = perfilMapper.toResponseDTO(entity.getPerfil());
+        }
         return new UsuarioResponseDTO(
                 entity.getId(),
                 entity.getNome(),
                 entity.getEmail(),
-                entity.getPerfil()//Pode ser null
+                entity.getRole(),
+                perfil//Pode ser null
         );
     }
 }

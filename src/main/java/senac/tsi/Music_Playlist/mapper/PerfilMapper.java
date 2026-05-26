@@ -17,6 +17,7 @@ public class PerfilMapper {
 
     public PerfilResponseDTO toResponseDTO(Perfil entity) {
         return new PerfilResponseDTO(
+                entity.getUsuario().getId(),
                 entity.getId(),
                 entity.getFotoUrl(),
                 entity.getBiografia()

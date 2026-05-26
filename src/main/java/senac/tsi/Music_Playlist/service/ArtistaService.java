@@ -1,5 +1,6 @@
 package senac.tsi.Music_Playlist.service;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
@@ -33,7 +34,7 @@ public class ArtistaService {
         this.pagedAssembler = pagedAssembler;
         this.assembler = assembler;
     }
-
+    @Transactional
     public PagedModel<EntityModel<ArtistaResponseDTO>>
     getPage(Pageable pageable) {
 
@@ -44,6 +45,7 @@ public class ArtistaService {
         return pagedAssembler.toModel(page, assembler);
     }
 
+    @Transactional
     public EntityModel<ArtistaResponseDTO> getById(Long id) {
 
         Artista artista = repository.findById(id)
@@ -57,7 +59,7 @@ public class ArtistaService {
         ArtistaResponseDTO responseDTO= mapper.toResponseDTO(artista);
         return assembler.toModel(responseDTO);
     }
-
+    @Transactional
     public EntityModel<ArtistaResponseDTO> create(
             ArtistaInputDTO dto
     ) {
@@ -70,6 +72,7 @@ public class ArtistaService {
         return assembler.toModel(responseDTO);
     }
 
+    @Transactional
     public EntityModel<ArtistaResponseDTO> update(
             Long id,
             ArtistaInputDTO dto
@@ -93,6 +96,7 @@ public class ArtistaService {
         return assembler.toModel(responseDTO);
     }
 
+    @Transactional
     public void delete(Long id) {
 
         Artista artista = repository.findById(id)
@@ -108,6 +112,7 @@ public class ArtistaService {
     }
 
     // CUSTOM QUERY
+    @Transactional
     public PagedModel<EntityModel<ArtistaResponseDTO>>
     findByGenero(
             String genero,

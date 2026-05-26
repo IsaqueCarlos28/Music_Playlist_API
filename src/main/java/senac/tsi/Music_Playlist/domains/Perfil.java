@@ -1,5 +1,6 @@
 package senac.tsi.Music_Playlist.domains;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -28,6 +29,7 @@ public class Perfil {
     private String biografia;
 
     // One-to-One
-    @OneToOne(mappedBy = "perfil", fetch = FetchType.EAGER)
+    @OneToOne(mappedBy = "perfil")
+    @JsonIgnore
     private Usuario usuario;
 }

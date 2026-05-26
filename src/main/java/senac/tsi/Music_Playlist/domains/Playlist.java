@@ -7,7 +7,9 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "playlists")
@@ -29,7 +31,7 @@ public class Playlist {
 
     // Many Playlists -> One Usuario
     @NotNull(message = "O usuário é obrigatório")
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
@@ -40,5 +42,5 @@ public class Playlist {
             joinColumns = @JoinColumn(name = "playlist_id"),
             inverseJoinColumns = @JoinColumn(name = "musica_id")
     )
-    private List<Musica> musicas = new ArrayList<>();
+    private Set<Musica> musicas = new HashSet<>();
 }

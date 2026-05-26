@@ -5,89 +5,102 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import senac.tsi.Music_Playlist.dtos.ErrorResponse;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-//
-//        Map<String, Object> body = new HashMap<>();
-//        body.put("timestamp", LocalDateTime.now());
-//        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-//        body.put("error", "Internal Server Error");
-//        body.put("message", ex.getMessage());
-//
-//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
-//    }
+
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
+
+        ErrorResponse body = baseResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Internal Server Error",
+                ex.getMessage()
+        ).build();
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(body);
+    }
 
     @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<Map<String, Object>>
-    handleNotFound(NoHandlerFoundException ex) {
+    public ResponseEntity<ErrorResponse> handleEndpointNotFound(
+            NoHandlerFoundException ex
+    ) {
 
-        Map<String, Object> body = new HashMap<>();
-
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "Not Found");
-        body.put("message", "Endpoint not found");
+        ErrorResponse body = baseResponse(
+                HttpStatus.NOT_FOUND,
+                "Not Found",
+                "Endpoint not found"
+        ).build();
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(body);
     }
 
-
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<Map<String,Object>> handleNotFound(NotFoundException ex){
-        Map<String,Object> body = new HashMap<>();
-        body.put("timeStamp", LocalDateTime.now());
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "NotFound");
-        body.put("resource",ex.getResource());
-        body.put("parameter",ex.getField());
-        body.put("value",ex.getValue());
-        body.put("message", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleNotFound(
+            NotFoundException ex
+    ) {
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+        ErrorResponse body = baseResponse(
+                HttpStatus.NOT_FOUND,
+                "Not Found",
+                ex.getMessage()
+        )
+                .resource(ex.getResource())
+                .field(ex.getField())
+                .value(ex.getValue())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(body);
     }
 
     @ExceptionHandler({
             MethodArgumentTypeMismatchException.class,
             HttpMessageNotReadableException.class
     })
-    public ResponseEntity<Map<String, Object>> handleBadRequest(Exception ex) {
+    public ResponseEntity<ErrorResponse> handleBadRequest(Exception ex) {
 
-        Map<String, Object> body = new HashMap<>();
+        ErrorResponse body = baseResponse(
+                HttpStatus.BAD_REQUEST,
+                "Bad Request",
+                ex.getMessage()
+        ).build();
 
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Bad Request");
-
-        return ResponseEntity.
-                badRequest().
-                body(body);
+        return ResponseEntity
+                .badRequest()
+                .body(body);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<Map<String, Object>> handleMethodNotAllowed(Exception ex) {
+    public ResponseEntity<ErrorResponse> handleMethodNotAllowed(
+            Exception ex
+    ) {
 
-        Map<String, Object> body = new HashMap<>();
-
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.METHOD_NOT_ALLOWED.value());
-        body.put("error", "Method Not Allowed");
-        body.put("message", ex.getMessage());
+        ErrorResponse body = baseResponse(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Method Not Allowed",
+                ex.getMessage()
+        ).build();
 
         return ResponseEntity
                 .status(HttpStatus.METHOD_NOT_ALLOWED)
@@ -95,42 +108,79 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex){
+    public ResponseEntity<ErrorResponse> handleValidation(
+            MethodArgumentNotValidException ex
+    ) {
 
-        Map<String, Object> body = new HashMap<>();
         Map<String, String> errors = new HashMap<>();
 
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(error ->
+                        errors.put(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                );
 
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Bad Request");
-        body.put("errors", errors);
+        ErrorResponse body = baseResponse(
+                HttpStatus.BAD_REQUEST,
+                "Validation Error",
+                "One or more fields are invalid"
+        )
+                .errors(errors)
+                .build();
 
-        return ResponseEntity.badRequest().body(body);
+        return ResponseEntity
+                .badRequest()
+                .body(body);
     }
 
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex) {
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponse> handleHandlerValidation(
+            HandlerMethodValidationException ex
+    ) {
+
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getAllErrors().forEach(error -> {
+
+            String field = "field";
+
+            if (error instanceof FieldError fieldError) {
+                field = fieldError.getField();
+            }
+
+            errors.put(field, error.getDefaultMessage());
+        });
+
+        ErrorResponse body = baseResponse(
+                HttpStatus.BAD_REQUEST,
+                "Validation Error",
+                "One or more fields are invalid"
+        )
+                .errors(errors)
+                .build();
+
         return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("error", ex.getMessage()));
+                .badRequest()
+                .body(body);
     }
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<Map<String, Object>> handleBusinessException(BusinessException ex) {
+    public ResponseEntity<ErrorResponse> handleBusinessException(
+            BusinessException ex
+    ) {
 
-        var body = Map.of(
-                "timestamp", LocalDateTime.now(),
-                "status", HttpStatus.UNPROCESSABLE_ENTITY.value(),
-                "error", "Business rule violation",
-                "message", ex.getMessage(),
-                "resource", ex.getResource(),
-                "field", ex.getField(),
-                "value", ex.getValue()
-        );
+        ErrorResponse body = baseResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "Business rule violation",
+                ex.getMessage()
+        )
+                .resource(ex.getResource())
+                .field(ex.getField())
+                .value(ex.getValue())
+                .build();
 
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_ENTITY)
@@ -138,32 +188,35 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<Map<String, Object>> handleConflitException(ConflictException ex) {
+    public ResponseEntity<ErrorResponse> handleConflictException(
+            ConflictException ex
+    ) {
 
-        var body = Map.of(
-                "timestamp", LocalDateTime.now(),
-                "status", HttpStatus.CONFLICT.value(),
-                "error", "Conflict rule violation",
-                "message", ex.getMessage(),
-                "resource", ex.getResource(),
-                "field", ex.getField(),
-                "value", ex.getValue()
-        );
+        ErrorResponse body = baseResponse(
+                HttpStatus.CONFLICT,
+                "Conflict rule violation",
+                ex.getMessage()
+        )
+                .resource(ex.getResource())
+                .field(ex.getField())
+                .value(ex.getValue())
+                .build();
 
         return ResponseEntity
-                .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .status(HttpStatus.CONFLICT)
                 .body(body);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex
+    ) {
 
-        Map<String, Object> body = new HashMap<>();
-
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.FORBIDDEN.value());
-        body.put("error", "Forbidden");
-        body.put("message", "You do not have permission to access this resource");
+        ErrorResponse body = baseResponse(
+                HttpStatus.FORBIDDEN,
+                "Forbidden",
+                "You do not have permission to access this resource"
+        ).build();
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
@@ -171,17 +224,47 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
+    public ResponseEntity<ErrorResponse> handleBadCredentials(
+            BadCredentialsException ex
+    ) {
 
-        Map<String, Object> body = new HashMap<>();
-
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.UNAUTHORIZED.value());
-        body.put("error", "Unauthorized");
-        body.put("message", "Invalid or missing API Key");
+        ErrorResponse body = baseResponse(
+                HttpStatus.UNAUTHORIZED,
+                "Unauthorized",
+                ex.getMessage()
+        ).build();
 
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(body);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedMediaType(
+            HttpMediaTypeNotSupportedException ex
+    ) {
+
+        ErrorResponse body = baseResponse(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                "Unsupported Media Type",
+                ex.getMessage()
+        ).build();
+
+        return ResponseEntity
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(body);
+    }
+
+    private ErrorResponse.ErrorResponseBuilder baseResponse(
+            HttpStatus status,
+            String error,
+            String message
+    ) {
+
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(status.value())
+                .error(error)
+                .message(message);
     }
 }

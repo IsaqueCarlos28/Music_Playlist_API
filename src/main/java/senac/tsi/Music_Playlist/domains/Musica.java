@@ -33,12 +33,14 @@ public class Musica {
     @Column(nullable = false)
     private Integer duracaoSegundos;
 
+    private String link;
+
     // Many Musicas -> One Artista
     @ManyToOne
     @JoinColumn(name = "artista_id")
     private Artista artista;
 
     // Many-to-Many
-    @ManyToMany(mappedBy = "musicas", fetch = FetchType.EAGER)
+    @ManyToMany(mappedBy = "musicas", fetch = FetchType.LAZY)
     private List<Playlist> playlists = new ArrayList<>();
 }
