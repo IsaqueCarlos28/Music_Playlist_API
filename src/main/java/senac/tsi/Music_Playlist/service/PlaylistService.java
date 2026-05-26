@@ -49,6 +49,7 @@ public class PlaylistService {
         this.assembler = assembler;
     }
 
+    @Transactional
     public PagedModel<EntityModel<PlaylistResponseDTO>>
     getPage(Pageable pageable) {
 
@@ -59,6 +60,7 @@ public class PlaylistService {
         return pagedAssembler.toModel(page, assembler);
     }
 
+    @Transactional
     public EntityModel<PlaylistResponseDTO> getById(Long id) {
 
         Playlist playlist = repository.findById(id)
@@ -124,6 +126,7 @@ public class PlaylistService {
     }
 
     // CUSTOM QUERY
+    @Transactional
     public PagedModel<EntityModel<PlaylistResponseDTO>>
     findByNome(String nome, Pageable pageable) {
 
@@ -178,6 +181,7 @@ public class PlaylistService {
      * Validates that every requested music ID exists, throwing
      * NotFoundException for the first missing one.
      */
+    @Transactional
     private List<Musica> resolveMusicas(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();

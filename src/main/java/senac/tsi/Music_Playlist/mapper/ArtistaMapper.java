@@ -5,6 +5,7 @@ import senac.tsi.Music_Playlist.domains.Artista;
 import senac.tsi.Music_Playlist.domains.Musica;
 import senac.tsi.Music_Playlist.dtos.artista.ArtistaInputDTO;
 import senac.tsi.Music_Playlist.dtos.artista.ArtistaResponseDTO;
+import senac.tsi.Music_Playlist.dtos.musica.MusicaResponseDTO;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,6 +14,12 @@ import java.util.Set;
 
 @Component
 public class ArtistaMapper {
+
+    private final MusicaMapper musicaMapper;
+
+    public ArtistaMapper(MusicaMapper musicaMapper){
+        this.musicaMapper = musicaMapper;
+    }
 
     public Artista toEntity(ArtistaInputDTO dto) {
         Set<Musica> musicas = new HashSet<>();
@@ -25,9 +32,9 @@ public class ArtistaMapper {
 
     public ArtistaResponseDTO toResponseDTO(Artista entity) {
 
-        List<String> musicas = entity.getMusicas()
+        List<MusicaResponseDTO> musicas = entity.getMusicas()
                 .stream()
-                .map(Musica::getTitulo)
+                .map(musicaMapper::toResponseDTO)
                 .toList();
 
         return new ArtistaResponseDTO(

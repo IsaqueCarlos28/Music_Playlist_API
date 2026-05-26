@@ -36,7 +36,7 @@ public class Playlist {
     private Usuario usuario;
 
     // Many-to-Many
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "playlist_musica",
             joinColumns = @JoinColumn(name = "playlist_id"),

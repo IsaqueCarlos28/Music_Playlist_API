@@ -1,6 +1,7 @@
 package senac.tsi.Music_Playlist.service;
 
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
@@ -41,6 +42,7 @@ public class MusicaService {
         this.assembler = assembler;
     }
 
+    @Transactional
     public PagedModel<EntityModel<MusicaResponseDTO>>
     getPage(Pageable pageable) {
 
@@ -51,6 +53,7 @@ public class MusicaService {
         return pagedAssembler.toModel(page, assembler);
     }
 
+    @Transactional
     public EntityModel<MusicaResponseDTO> getById(Long id) {
 
         Musica musica = repository.findById(id)
@@ -65,6 +68,7 @@ public class MusicaService {
         return assembler.toModel(responseDTO);
     }
 
+    @Transactional
     public EntityModel<MusicaResponseDTO> create(
             MusicaInputDTO dto
     ) {
@@ -87,6 +91,7 @@ public class MusicaService {
         return assembler.toModel(responseDTO);
     }
 
+    @Transactional
     public EntityModel<MusicaResponseDTO> createV2(
             MusicaInputDTOv2 dto
     ) {
@@ -109,6 +114,7 @@ public class MusicaService {
         return assembler.toModel(responseDTO);
     }
 
+    @Transactional
     public EntityModel<MusicaResponseDTO> update(
             Long id,
             MusicaInputDTOv2 dto
@@ -144,6 +150,7 @@ public class MusicaService {
         return assembler.toModel(responseDTO);
     }
 
+    @Transactional
     public void delete(Long id) {
 
         Musica musica = repository.findById(id)
@@ -155,10 +162,15 @@ public class MusicaService {
                         )
                 );
 
+        musica.getPlaylists()
+                .forEach(playlist ->
+                        playlist.getMusicas().remove(musica));
+
         repository.delete(musica);
     }
 
     // CUSTOM QUERY - TITLE
+    @Transactional
     public PagedModel<EntityModel<MusicaResponseDTO>>
     findByTitulo(
             String titulo,
