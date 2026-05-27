@@ -31,6 +31,10 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         try {
             Authentication authentication =
                     authenticationService.getAuthentication(request);
@@ -59,6 +63,8 @@ public class AuthenticationFilter extends OncePerRequestFilter {
                 """.formatted(
                     ex.getMessage().replace("\"", "'")
             ));
+
+            return;
         }
 
         log.debug("FILTER EXECUTED: {}", request.getRequestURI());

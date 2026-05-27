@@ -74,6 +74,7 @@ public class SecurityConfig {
                                 "/h2-console/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(

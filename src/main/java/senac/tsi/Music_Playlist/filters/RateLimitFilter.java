@@ -45,6 +45,11 @@ public class RateLimitFilter extends GenericFilterBean {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
+        // IMPORTANT: Allow CORS preflight requests
+        if ("OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
 
         String path = httpRequest.getRequestURI();
 
